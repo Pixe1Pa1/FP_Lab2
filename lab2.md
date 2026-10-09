@@ -11,7 +11,7 @@
 Реалізуйте дві рекурсивні функції, що виконують деякі дії з вхідним(и) списком(-ами), за можливості/необхідності використовуючи різні види рекурсії. Функції, які необхідно реалізувати, задаються варіантом (п. 2.1.1). Вимоги до функцій:
 1. Зміна списку згідно із завданням має відбуватись за рахунок конструювання нового списку, а не зміни наявного (вхідного).
 2. Не допускається використання функцій вищого порядку чи стандартних функцій для роботи зі списками, що не наведені в четвертому розділі навчального посібника.
-3. Реалізована функція не має бути функцією вищого порядку, тобто приймати функції в якості аргументів.
+3. Реалізована функція не має бути функцією вищого порядку, тобто приймати функції в якості аргументів. 
 4. Не допускається використання псевдофункцій (деструктивного підходу).
 5. Не допускається використання циклів
 Кожна реалізована функція має бути протестована для різних тестових наборів. Тести мають бути оформленні у вигляді модульних тестів (див. п. 2.3). 
@@ -34,13 +34,44 @@ CL-USER> (list-set-difference '(1 2 3 4) '(4 5 6) '(2 5 7))
 ## Лістинг функції 'remove-thirds-and-reverse'
 
 ```lisp
+;; реалізація 1:
 (defun remove-thirds-and-reverse(lst)
 	(cond
 		((null lst) nil)
 		((null (rest lst)) (list (first lst)))
 		((null (rest (rest lst))) (list (second lst) (first lst)))
-		(t (append (remove-thirds-and-reverse (rest(rest(rest lst)))) (list (second lst) (first lst))))
-))
+		(t (append (remove-thirds-and-reverse (rest(rest(rest lst)))) (list (second lst) (first lst))))))
+
+;; реалізація 2:
+(defun remove-thirds-and-reverse-aux(lst reslst)
+	(cond
+		((null lst) (if (null (car reslst)) (cdr reslst) reslst))
+		(t (remove-thirds-and-reverse-aux (nthcdr 3 lst) (cons (second lst) (cons (first lst) reslst))))))
+
+(defun remove-thirds-and-reverse(lst)
+	(remove-thirds-and-reverse-aux lst ()))
+
+;; реалізація 3:
+(defun remove-thirds-and-reverse (lst &optional reslst)
+  (cond
+    ((null lst) reslst)
+    ((null (rest lst)) (cons (first lst) reslst))
+    ((null (rest (rest lst))) (cons (second lst) (cons (first lst) reslst)))
+    (t (remove-thirds-and-reverse (rest (rest (rest lst))) (cons (second lst) (cons (first lst) reslst))))))
+
+;; реалізація 4 (якщо nil перший елемент не завжди працює працює):
+(defun remove-thirds-and-reverse(lst &optional reslst)
+	(cond
+		((null lst) (if (null (car reslst)) (cdr reslst) reslst))
+		(t (remove-thirds-and-reverse (nthcdr 3 lst) (cons (second lst) (cons (first lst) reslst))))))
+
+;; реалізація 5 (мабуть що найкраща реалізація яка об'єднує 4 й 5):
+(defun remove-thirds-and-reverse (lst &optional reslst)
+  (cond
+    ((null lst) reslst)
+    ((null (rest lst)) (cons (first lst) reslst))
+    ((null (rest (rest lst))) (cons (second lst) (cons (first lst) reslst)))
+    (t (remove-thirds-and-reverse (nthcdr 3 lst) (cons (second lst) (cons (first lst) reslst))))))
 ```
 
 ### Тестові набори та утиліти
@@ -69,6 +100,7 @@ NIL
 
 ## Лістинг функції 'list-set-difference-3'
 ```lisp
+;; реалізація 1:
 (defun list-set-difference-3(lst1 lst2 lst3)
 	(cond 
 		((null lst1) nil)
@@ -76,6 +108,27 @@ NIL
 		((member (car lst1) lst3) (list-set-difference-3 (cdr lst1) lst2 lst3))
 		(t (cons (car lst1) (list-set-difference-3 (cdr lst1) lst2 lst3)))
 	))
+
+;; реалізація 2 (використання допоміжної функції):
+(defun is-in-list (elem lst)
+  (cond
+    ((null lst) nil)
+    ((eql (car lst) elem) t)
+    (t (is-in-list elem (cdr lst)))))
+
+(defun list-set-difference-3 (lst1 lst2 lst3)
+  (cond 
+    ((null lst1) nil)
+    ((is-in-list (car lst1) lst2) (list-set-difference-3 (cdr lst1) lst2 lst3))
+    ((is-in-list (car lst1) lst3) (list-set-difference-3 (cdr lst1) lst2 lst3))
+    (t (cons (car lst1) (list-set-difference-3 (cdr lst1) lst2 lst3)))))
+
+;; реалізація 3 (мабуть що найкраща реалізація, проте використовує remove):
+(defun list-set-difference-3 (lst1 lst2 lst3)
+  (cond
+    (lst2 (list-set-difference-3 (remove (car lst2) lst1) (cdr lst2) lst3))
+    (lst3 (list-set-difference-3 (remove (car lst3) lst1) nil (cdr lst3)))
+    (t lst1)))
 ```
 
 ### Тестові набори та утиліти
